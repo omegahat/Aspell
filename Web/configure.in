@@ -1,0 +1,11 @@
+AC_INIT(index.html.in)
+
+
+VERSION=`perl -e 'while(<>) { if(m/Version: (.*)/) {print $1,"\n";}}' ../DESCRIPTION`
+
+SRC_TAR="Aspell_${VERSION}.tar.gz"
+
+AC_SUBST(VERSION)
+AC_SUBST(SRC_TAR)
+
+AC_OUTPUT(index.html)

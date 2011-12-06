@@ -1,0 +1,635 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<article  xmlns:s="http://cm.bell-labs.com/stat/S4"
+          xmlns:c="http://www.C.org"
+	  xmlns:html="http://www.w3.org/HTML4"
+	  xmlns:curl="http://curl.haxx.se"
+	  xmlns:sql="http://www.sql.org"
+>
+
+
+<articleinfo>
+<author>
+<firstname>Duncan</firstname>
+<surname>Temple Lang</surname>
+<affiliation>
+<orgname>Department of Statistics, UC Davis</orgname>
+</affiliation>
+<title>The <ulink url="http://www.omegahat.org/Aspell">Aspell package</ulink></title>
+</author>
+<keywordset>
+<keyword>S4 classes</keyword>
+<keyword>R</keyword>
+</keywordset>
+</articleinfo>
+
+
+<section>
+<title>Overview</title> 
+
+Aspell is software that provides facilities for checking the spelling
+of words.  Aspell is both an (command-line) application and a C
+library that can be used other applications.  This architecture
+enables us to dynamically load it into R and make its spell checking
+facilities available to R users.  Why would this be useful? Firstly,
+one can use R to perform spelling in general contexts as one could in
+other general programming languages.  Importantly, we as statisticians
+also increasingly deal with text as a data source or format and
+perform analysis on collections of documents.  We might be interested
+in the number or pattern of mis-spelled words and we need to be able
+to identify them.  Also, we work with help files and other forms of
+documentation and need the contents to be spelled correctly.  This is
+typically left to other programs such as editors like emacs, but
+quality control and context-specific spelling can be done more
+naturally within R.  In this case, spelling facilities are needed in R
+rather than R facilities are needed in the editor.  One can of course
+use ESS or other tools to add context-specific inforamtion to the
+editor, but that is not our goal here.  And lastly, it will be
+interesting to see if we can improve error messages by identifying
+mis-spelled variable names using a spell-checker.  By making a spell
+checking facility available to R, perhaps others can improve the help
+facilities, error messages, and general interaction by trapping
+spelling mistakes and presenting intelligent, context-specific
+suggestions for alternatives.
+
+
+<para/>
+
+The aspell library provides a C interface that can be used to check
+the spelling of words
+and the Aspell package contains the functions in R to access that interface. 
+As with all packages, we must first load it  to use its functions.
+<s:code>
+ library(Aspell)
+</s:code>
+</section>
+
+<section>
+<title>The Basics</title>
+The work-horse function in the Aspell package
+for R is <s:func>aspell</s:func> (or simply <s:func>spell</s:func>).
+The simplest way to use this is to pass it a vector
+of words.  The result is a logical vector of the same
+length as the vector of words, and each element is
+a logical value indicating whether the corresponding word
+was spelled correctly (<s:true/>) or not (<s:false/>).
+
+<s:code>
+ aspell("duncan")
+</s:code>
+The result is <s:false/> since the word is not correctly spelled - we need a capital 'D'.
+
+The next thing we might want to do is obtain a list of possible alternative
+spellings.
+The <s:func>aspell</s:func> does this for us also if we ask it to suggest alternatives.
+<s:code> 
+ aspell("duncan", TRUE)
+</s:code>
+On my machine (using an English-US (en_US) dictionary), 
+I get the following values returned:
+<s:output>
+$duncan
+ [1] "Duncan"   "dun can"  "dun-can"  "Dunc"     "Duncan's" "dungeon" 
+ [7] "dunging"  "dunking"  "Deccan"   "Dunc's"   "Tuscan"   "cancan"  
+[13] "uncanny"  "Tongan"   "Danica"   "Donica"   "dung"     "dunk"    
+[19] "toucan"  
+</s:output>
+The suggested alternatives are ranked from most-likely to least likely.
+One can  control how aspell determines these possible alternatives,
+trading speed for accuracy and different types of spellers.
+But we will return to this.
+
+<para/>
+
+For the record, if a word is spelled correctly and we ask for suggestions,
+that word will appear in the suggestions vector.
+It may be the first word, but one cannot guarantee that.
+For example,
+<s:code>
+aspell("aspell", suggests = TRUE)
+<s:output>
+$aspell
+ [1] "Aspell"   "aspell"   "asp ell"  "asp-ell"  "Ispell"   "ispell"  
+ [7] "spell"    "pspell"   "Aspell's" "Ascella"  "spill"    "Ispell's"
+</s:output>
+</s:code>
+
+<para/>
+We can spell check multiple words in a single call.
+<s:code> 
+ aspell(c("duncan", "temple", "lang"))
+</s:code>
+The result is
+<s:output>
+duncan temple   lang 
+ FALSE   TRUE   TRUE 
+</s:output>
+indicating that the last two words were spelled correctly, but, as  before,
+the first was not.
+
+<para/>
+And we can also get suggestsions for a collection of words in a single call.
+For instance,
+<s:code>
+aspell(c("misestimation", "statistcs"), TRUE)
+<s:output>
+$misestimation
+[1] "estimation"   "mastication"  "molestation"  "ministration" "misquotation"
+[6] "menstruation"
+
+$statistcs
+[1] "statistics"  "statistic's" "statistic"   "statistical" "statics"    
+[6] "stylistics"  "statics's"   "sadists"     "sadist's"   
+</s:output>
+</s:code>
+
+<section>
+<title>Documents</title>
+
+The <s:func>aspell</s:func> command allows the user to check an
+individual word or vector of words.  It is more common that we will
+have an entire document of words to spell check.  For example, we will
+want to spell check a particular document.
+
+Let's consider an example of an R help file,
+coming from this package in particular.
+We can use the <s:func>Rd_parse</s:func>
+in <s:package>tools</s:package>
+to parse the <filename>aspell.Rd</filename>
+file:
+<s:code>
+els = Rd_parse(system.file("man", "aspell.Rd", package = "Aspell"))
+</s:code>
+From this, let's look at the description
+field from the file, <s:expr>els$data[3, 2]</s:expr>.
+Let's suppose we just want to collect the words
+that aspell believes are mis-spelled.
+As we encounter them, we will print them on the console.
+We can do this via the spell-checker
+as follows:
+<s:code>
+txt = els$data[3, 2], 
+spellDoc(txt, function(word, ...) { cat(word, "\n") })
+</s:code>
+
+As the spell-checker encounters each mis-spelled word, it invokes the
+function we gave it as the second argument.  In our example, we merely
+print the value on the screen/console.  One can do more interesting
+things such as prompting the user for an alternative spelling of the
+word, accompanied by possible suggestions from aspell.  This is what
+the default handler for <s:func>spellDoc</s:func> does.  For each word
+that the speller identifies as mis-spelled, the handler prompts the
+user with the collection of suggestions the speller provides.  If the
+user selects one of these, the handler reports this "correction" back
+to the speller so that the speller can learn for future words or
+misspellings of the same word.  If the user accepts the orginal word,
+the handler notifies the speller that this is a legitimate word and so
+it will not be signalled as mis-spelled in the future.
+Both of these feedback techniques can be turned off 
+via the <s:arg>correct</s:arg> argument of
+the <s:func>DocSpeller</s:func> function which 
+creates the handler function.
+
+<para/>
+We can also just collect 
+the mis-spelled words  across the calls and then retrieve them as a 
+vector of words.
+The function  <s:func>collectWords</s:func> 
+is available to do this:
+<s:code>
+spellDoc(file(system.file("INSTALL", package = "Aspell")), collectWords())
+</s:code>
+One does not need the call to <s:func>file</s:func>
+here, but it removes any ambiguity
+that we are to spell the contents of the file rather than
+the word that is the file name itself.
+
+
+<para/>
+
+The <s:arg>checker</s:arg> argument of <s:func>spellDoc</s:func> is
+expected to be an object of class <s:class
+file="AspellConfig">AspellDocChecker</s:class>.  By default, this is
+created each time we call <s:func>spellDoc</s:func>.  However, one can
+create just one of these objects and reuse it across multiple
+documents or spelling of the same documents.  The same applies to the
+<s:arg>speller</s:arg> and <s:arg>config</s:arg> arguments also.
+
+</section>
+
+
+
+</section>
+
+<section>
+<title>The AspellSpeller class</title> 
+
+If we just want to use this Aspell package to check the spelling of
+words, the <s:func>aspell</s:func> function as we have described it
+will do the job.  Essentially, it consults a fixed dictionary and
+finds out whether the word is spelled correctly, and if not, finds the
+"best" alternatives.  That sounds sufficient.  However, when we are
+spelling lots of words and want to control and connect the spelling
+process, then we need more control.
+
+<para/>
+
+The last parameter of <s:func>aspell</s:func> is the
+<s:arg>speller</s:arg> object.  By default, if this is not specified,
+a new <s:class>AspellSpeller</s:class> object is created.  When the
+spelling is completed, that speller is discarded.  As a result, there
+is no continuity between spelling operations.  If we want there to be
+continuity, we need to use the same speller.  To do this, we create
+the speller separately and then pass that in each call.
+We use <s:func>getSpeller</s:func>
+to get an instance of the speller:
+<s:code>
+ sp = getSpeller()
+</s:code>
+
+<para/>
+Given  the speller, we can pass this to the different spelling
+functions.
+
+
+<para/>
+
+We can create as many spellers as we want. This is
+useful if we want to use different settings for the
+different spellers, e.g. different dictionaries.
+
+<para/>
+Each speller has options that control how it behaves.
+One can set these 
+
+
+</section>
+
+<section>
+<title>Managing Words and Corrections</title>
+
+The aspell library, and consequently the Aspell package,
+provides facilities for educating the spell checker
+about what words should be considered correct
+and also for training it to offer better suggestions
+based on previous discoveries.
+
+<para/>
+
+One can pass a collection of words to the speller that should be
+treated as correct.  We do this via the function
+<s:func>addToList</s:func>. 
+For example, suppose we want to recognize
+the words  "omegahat" and "SJava" as
+legitimate for a particular speller instance.
+We would issue the command
+<s:code>
+sp = getSpeller()
+addToList(c("omegahat", "SJava"), sp)
+</s:code>
+Now, when we use this particular speller object to check the words
+"omegahat" or "SJava", it will report that they are correctly spelled.
+If we use a different speller, on the other hand, that one will report
+that they are mis-spelled.  In this way, we can maintain multiple,
+independent spellers that have different knowledge. We can do this
+easily in R by assigning the different spellers to different variables
+or elements of a list and using the appropriate one for the intended
+purpose.
+
+<para/>
+Before spelling a document, we can add any context-specific words that
+should be treated as correct but that would ordinarily be flagged as
+mis-spellings.  For example, if were checking the spelling of a help
+(Rd) file in R, we might first inform the speller that the names of
+the functions within the package are legitimate.
+We can do this with
+<s:code>
+ addToList(objects(2), sp)
+</s:code>
+assuming the package is loaded in the second place in
+the search path.
+
+<para/>
+Additionally, we might add the names of the formal
+arguments/parameters for the functions being documented so that
+references to them in the text are not mistaken as odd words.
+Again, something like
+<s:code>
+ addToList(names(formals(func)), sp)
+</s:code>
+does the job.
+Of course, we have to use the same speller object
+(<s:var>sp</s:var>) when doing the spell-checking.
+
+
+<para/>
+
+A possibly more convenient interface for adding to the 
+list of correctly spelled words is to use the
+<s:op>$</s:op> operator for a <s:class>AspellSpeller</s:class> object.
+We have provided overloaded methods for 
+speller objects and one of them is the
+session "field".
+We can use this as
+<s:code> 
+  sp$session  = c("omegahat", "SJava")
+</s:code>
+This tells R to add the words on the right hand side of the 
+assignment to the session word list of
+correctly spelled words.
+This is merely a call to <s:func>addToList</s:func>
+and there is no difference other than convenience.
+
+<para/>
+
+If one looks at the potential arguments for
+<s:func>addToList</s:func>, one sees that there is a
+<s:arg>session</s:arg> parameter.  This is a logical value that
+controls whether the words are added to the speller's session list of
+words, or alternatively to the speller's personal list of words.
+These two lists are maintained separately.  The essential difference
+is that we can save the personal list back to a central file when we
+wish, whereas the session word list will go away when the speller
+disappears.  So this interface allows us to differentiate between
+types of words and their future use for spelling.
+
+<para/>
+
+The session word list can be retrieved at any moment using the
+function <s:func>getWordList</s:func>.  This allows us to manage the
+lists ourselves rather than relying on the personal words file, etc.
+In addition to the session and personal list, there is also the main
+word list for a speller.  Any of these 3 lists can be retrieved by
+specifying the names of interest as the second argument to
+<s:func>getWordList</s:func>.  For example, to get the session and
+personal lists, we use <s:expr>getWordList(speller, c("session",
+"personal"))</s:expr>
+
+
+<para/>
+We next turn our attention to how we can add words to the speller to
+tell it about words that were mis-spelled and what the correct version
+should be.  The benefit of this is that we are providing feedback to
+the speller so that it can use this in future spell checking to
+provide better suggestions.
+We add  mis-spelled and corrected pairs of words
+to the speller using the
+<s:function>addCorrection</s:function>
+function.
+The first argument is the speller object.
+When used interactively, i.e. at the command line,
+it is easise to then provide the mis-spelled/correct pairs
+directly as named arguments (in that order of pairing).
+For example,
+<s:code>
+addCorrection(sp, duncn = "duncan",  ro = "rho", statistcs = "statistics")
+</s:code>
+This tells the speller that it should suggest
+"duncan" when it finds the mis-spelled word "duncn",
+and similarly "ro" should lead to "rho".
+We can test this
+<s:code>
+sp$spell("ro")
+$ro
+ [1] "rho" "RI"  "Rio" "Roi" "Row" "Roy" "roe" "row" "OR"  "or"  "R"   "r"  
+[13] "ROM" "RP"  "Rob" "Rod" "Rog" "Rom" "Ron" "Ros" "Roz" "rob" "rod" "rot"
+[25] "to"  "O"   "o"   "RR"  "Ra"  "Re"  "Rh"  "Ru"  "Ry"  "re"  "PRO" "SRO"
+[37] "bro" "fro" "pro" "RC"  "RD"  "RF"  "RN"  "RV"  "Rb"  "Rd"  "Rf"  "Rn" 
+[49] "Rx"  "rd"  "rm"  "rs"  "rt"  "BO"  "Bo"  "CO"  "Co"  "Ho"  "Io"  "Jo" 
+[61] "KO"  "MO"  "Mo"  "No"  "PO"  "Po"  "SO"  "co"  "do"  "go"  "ho"  "lo" 
+[73] "mo"  "no"  "so"  "yo"  "R's"
+</s:code>
+and, as expected, "rho" comes first.
+
+
+<para/>
+We can save the word lists to their appropriate files using
+<s:func>saveWordLists</s:func> or <s:expr>sp$save()</s:expr>.
+This causes aspell to upadte the user's files with information in
+the current word lists.
+
+</section>
+
+
+<section>
+<title>Configuration options</title> 
+
+The aspell library is quite customizable in which dictionaries it
+uses, how it provides suggestions for alternative spellings/words,
+deals with words that might be run-together, encoding of characters,
+and so on.  While aspell reads the settings from site and user files,
+we can also specify these values dynamically within an R session.
+
+<para/>
+
+Each speller has its own configuration set.  This allows us to have
+different spellers for different purposes.  For example, we may have
+one spelling in English and another in US English.
+These sorts of options are controlled by the speller's configuration.
+Given a speller, we can get its configuration object
+using either of the commands
+<s:code>
+ conf = sp$conf
+</s:code>
+or
+<s:code>
+ conf = getConfig(sp)
+</s:code>
+
+The resulting object is of class <s:class>AspellConfig</s:class>.
+We can treat this as if it were a list in R.
+Each of the options it supports can be thought of
+as an element in the list.
+We can find the names of the elements/options using
+the <s:func>names</s:func> function:
+<s:code>
+names(conf)
+<s:output>
+ [1] "actual-dict-dir"      "actual-lang"          "affix-char"          
+ [4] "affix-compress"       "backup"               "byte-offsets"        
+ [7] "clean-affixes"        "clean-words"          "conf"                
+[10] "conf-dir"             "conf-path"            "data-dir"            
+[13] "dict-alias"           "dict-dir"             "encoding"            
+[16] "extra-dicts"          "filter"               "filter-path"         
+[19] "guess"                "home-dir"             "ignore"              
+[22] "ignore-accents"       "ignore-case"          "ignore-repl"         
+[25] "invisible-soundslike" "jargon"               "keyboard"            
+[28] "keymapping"           "lang"                 "language-tag"        
+[31] "local-data-dir"       "master"               "master-flags"        
+[34] "master-path"          "mode"                 "module"              
+[37] "module-search-order"  "norm-form"            "norm-required"       
+[40] "norm-strict"          "normalize"            "partially-expand"    
+[43] "per-conf"             "per-conf-path"        "personal"            
+[46] "personal-path"        "prefix"               "repl"                
+[49] "repl-path"            "reverse"              "run-together"        
+[52] "run-together-limit"   "run-together-min"     "save-repl"           
+[55] "set-prefix"           "size"                 "skip-invalid-words"  
+[58] "spelling"             "sug-edit-dist"        "sug-mode"            
+[61] "sug-repl-table"       "sug-split-char"       "sug-typo-analysis"   
+[64] "suggest"              "time"                 "use-other-dicts"     
+[67] "validate-affixes"     "validate-words"       "variety"             
+[70] "warn"                 "word-list-path"      
+</s:output>
+</s:code>
+
+This shows that there are currently 71 different options.  Each of the
+different options has one of 4 basic types of values.  These are
+integer, string, boolean and list.  (There are also others such as
+file, but these are just types of strings and are not dealt with
+separately in the aspell library.)  We can find out more about the
+options and their types using <s:func>getSpellInfo</s:func>.  This
+returns a description of class <s:class>KeyInfo</s:class> for each
+element in the configuration object.  Each <s:class>KeyInfo</s:class>
+object has the name of the option being described.  It also provides
+the type of the acceptable value.  This type information is given as a
+named scalar integer.  The name gives the human-readable form and is
+one of the 4 basic types.  Each information object also provides the
+default value in the <s:slot>def</s:slot> slot. And, importantly, the
+<s:slot>desc</s:slot> slot in most objects gives a brief description
+of what the option controls.  The remaining two fields in the object
+are not of interest to us at this point.
+
+<para/>
+
+The important thing about the configuration objects
+is that we can both get and set values.
+The function <s:func>getSpellConfig</s:func>
+is the underlying mechanism to query a value.
+Given a <s:class>AspellConfig</s:class>
+class however, we can use the
+short-hand form via the <s:op>[</s:op>
+and <s:op>$</s:op>
+operators.
+If we want to fetch the value of one
+element in the configuration, we can
+use <s:op>$</s:op>,
+as in
+<s:code>
+ conf$lang
+</s:code>
+or
+<s:code>
+ conf$"data-dir"
+</s:code>
+Note that we have to quote names with a '-' in them.
+This form returns the value for that option.
+
+<para/>
+
+If we want to get the values for multiple options in a single call, we
+can use <s:op>[</s:op>.
+For example,
+<s:code>
+conf[c("mode", "filter", "lang")]
+</s:code>
+returns a vector containing the three values
+<s:output>
+   mode  filter    lang 
+  "url"   "url" "en_US" 
+</s:output>
+
+If the values were of different types (e.g. an integer and a string),
+the results are coreced to the common type.
+This is the result of a call to <s:func package="base">sapply</s:func>.
+For example,
+<s:code>
+ conf[c("run-together-min", "filter", "lang")]
+</s:code>
+yields
+<s:output>
+run-together-min           filter             lang 
+             "3"            "url"          "en_US" 
+</s:output>
+yet the "run-together-min" option is an integer.
+
+<para/>
+On the other hand,  if the values of different lengths (e.g. one is a list of strings and an other an
+integer), the result would be a list. 
+For example,
+if "filter" is a list with two elements, then
+<s:code>
+conf[c("run-together-min", "filter", "lang")]
+</s:code>
+produces
+<s:output>
+$"run-together-min"
+[1] 3
+
+$filter
+[1] "email" "html" 
+
+$lang
+[1] "en_US"
+</s:output>
+
+
+<section>
+<title>Setting Options</title> 
+
+Just as we can get the values of options in the
+<s:class>AspellConfig</s:class> objects, we can also set values for
+options.  Analgous to <s:func>getSpellConfig</s:func>, we use
+<s:func>setSpellConfig</s:func>.  This takes a configuration object
+and then a collection of name-value pairs giving the option name and
+its new value.  The function takes care of coercing logicals to the
+appropriate form (e.g. <s:false/> to "false").  It also handles
+assigning multiple values to list type options.  Thus, we can use it
+as
+<s:code>
+ setSpellConfig(conf, warn = FALSE, lang = "en", filter = c("email", "html"))
+</s:code>
+Then, the command
+<s:code>
+conf[c("warn", "lang", "filter")]
+</s:code>
+gives
+<s:output>
+$warn
+[1] FALSE
+
+$lang
+[1] "en"
+
+$filter
+[1] "email" "html" 
+</s:output>
+
+<para/>
+As we used the <s:op>$</s:op>
+operator to access individual values,
+we can also assign a value to 
+an individual option using
+<s:op>$&lt;-</s:op>.
+For example, we can set the "warn" option to
+<s:false/> via
+<s:code>
+conf$warn = FALSE
+</s:code>
+This approach also understands
+multiple values.
+<s:code>
+ conf$filter = c("email", "html")
+</s:code>
+As one would expect, we can append to an existing list
+using 
+<s:code>
+ conf$filter = c("email", "html", conf$filter)
+</s:code>
+The <s:op>[&lt;-</s:op> does not work 
+in this context.
+
+
+<para/>
+
+The <s:op>$&lt;-</s:op> mechanism uses
+<s:func>setSpellConfig</s:func> to perform its task.  And using
+<s:func>setSpellConfig</s:func> hides the details of coercing the
+values and setting multiple values in a list.  However, if one wants
+to, one can do this directly using the "add-<emphasis>option name</emphasis>",
+"clear-<emphasis>option name</emphasis>" and "rem-<emphasis>option name</emphasis>" prefixes
+to the filter.
+
+</section>
+</section>
+
+</article>

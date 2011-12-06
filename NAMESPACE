@@ -1,0 +1,39 @@
+useDynLib(Aspell)
+
+exportClasses(AspellConfig, AspellDocChecker, AspellSpeller, KeyInfo, DictInfo, ModuleInfo)
+
+export(addToList, addCorrection, clearSession)
+
+export(docChecker, reset, process, Next, spellDoc)
+
+export(createSpellConfig, getSpellConfig, setSpellConfig, getSpellConfig, getDictInfo, getModuleInfo)
+
+export(getSpeller, aspell, spell, getSpellInfo, getConfig, saveWordLists)
+
+    # Fails sometimes in current aspell.
+export(getWordList)
+
+
+exportMethods("$", "$<-")
+
+S3method(names, AspellConfig)
+S3method("[", AspellConfig)
+S3method("$", AspellConfig)
+S3method("$<-", AspellConfig)
+
+
+export(DocSpeller, collectWords)
+exportMethods("spellDoc")
+
+exportClasses(AspellToken, SpellingReplacement)
+exportClasses(Callback, CallbackResult)
+exportMethods("getResult")
+
+
+
+# For DictInfo
+#   exportMethods("show")
+
+
+
+

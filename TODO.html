@@ -1,0 +1,63 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html> <head>
+<title></title>
+</head>
+
+
+<body>
+<h1></h1>
+<dl>
+      
+  <dt> Put finalizers on the references.
+  <dd> Now on speller.
+        Configuration objects we need more care as they could be in
+        a speller.  Does aspell figure out what is going on for us?
+        It is added, except for the case that we get it from the speller.
+
+  <dt>  $<- and [<-
+  <dd>  $<- done.
+
+  <dt>  $ accessor for AspellConfig is very slow. 
+  <dd> Profile it.
+
+
+  <dt>
+  <li>  Module info.
+  <dd>   In place, but needs testing. Crashing at times.
+      <br>
+       dict_dirs is causing the problem. So that one element is now
+  turned off.
+      
+  <dt> Filters, documents, etc.
+  <dd>  Documents okay. Filters - just set them in the
+       config$add-filter technique.
+      <br>
+          In the future, could write our own filter in R!
+
+  <dt> Think how to get the setSpellConfig() and $&lt;-, etc. to add
+      to a list
+
+  <dd> Done. Could use some cleanup.
+<pre>
+      conf$"add-filter" <- "url"
+
+      conf$"add-filter" <- c("url", "email")
+</pre>
+
+     Use clear- to remove an element.
+
+
+  <dt> Word lists.
+  <dd> as.character()
+      Causing problems - seg faults. Appears to be fixed now.
+      
+</dl>
+
+
+<hr>
+<address><a href="http://www.stat.ucdavis.edu/~duncan">Duncan Temple Lang</a>
+<a href=mailto:duncan@wald.ucdavis.edu>&lt;duncan@wald.ucdavis.edu&gt;</a></address>
+<!-- hhmts start -->
+Last modified: Wed Jun 29 14:39:33 PDT 2005
+<!-- hhmts end -->
+</body> </html>

@@ -1,0 +1,28 @@
+AC_INIT(R/aspell.R)
+
+ASPELL_LIB_DIR=${ASPELL_LIB_DIR-/usr/local/lib}
+ASPELL_INC_DIR=${ASPELL_INC_DIR-/usr/local/include}
+
+AC_ARG_WITH(aspell,["the location of the aspell installation (the value given for --prefix when installing aspell)"],
+                 [ASPELL_HOME=$withval; echo "Got the setting for aspell installation directory: $ASPELL_HOME"])
+
+if test -n "$ASPELL_HOME" ; then
+ echo "Setting include and library directories from aspell installation directory setting"
+ ASPELL_LIB_DIR=$ASPELL_HOME/lib
+ ASPELL_INC_DIR=$ASPELL_HOME/include
+fi
+
+CPPFLAGS="$CPPFLAGS -I${ASPELL_INC_DIR}"
+
+
+AC_CHECK_HEADER(aspell.h, , [echo "Cannot find aspell.h.  Specify the directory via the environment variable ASPELL_INC_DIR"; exit 1])
+
+LIBS="-L${ASPELL_LIB_DIR} -laspell"
+
+AC_SUBST(ASPELL_INC_DIR)
+AC_SUBST(ASPELL_LIB_DIR)
+
+
+AC_TRY_LINK([#include "aspell.h"],  [AspellConfig *conf = new_aspell_config();], [echo "Linked with libaspell"], [echo "Cannot link program with libaspell. Check the config.log file for more details. Use the environment variable ASPELL_LIB_DIR to specify the directory in which libaspell is located." ; exit 2])
+
+AC_OUTPUT(src/Makevars)

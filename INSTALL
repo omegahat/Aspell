@@ -1,0 +1,89 @@
+If you install aspell using the default configuration prefix location
+(i.e. /usr/local/), installing this package should be straightforward
+and
+
+    R CMD INSTALL Aspell
+
+should work without any further concern.
+
+If, on the other hand, you installed aspell into a different location
+on your machine, you will need to tell the configuration script for
+this package where to find aspell.h and libaspell.a or libaspell.so,
+etc.  There is no problem installing aspell in a different location
+and it is necessary if you do not have suitable permissions on the
+machine to install things centrally for all accounts.
+
+To avoid needing permissions, one might install the aspell library 
+using
+
+   ./configure --prefix=$HOME/local
+
+to put things in the directory local/ under ones own account.
+In this case, aspell.h will be installed into 
+
+   $HOME/local/include
+
+and libaspell will be placed in
+
+   $HOME/local/lib
+
+To allow the configuration script for the R package Aspell
+to find these files,  the simplest thing to do is to 
+specify the value of the prefix argument above
+when using R CMD INSTALL
+
+  R CMD INSTALL --configure-args=--with-aspell=$HOME/local Aspell
+
+This adds include/ and lib/ to the prefix value and uses
+these for searching for the header file and library respectively.
+
+If you are doing this repeatedly and want to avoid specifying
+the location on the command line of R CMD INSTALL, you can
+set the environment variable ASPELL_HOME to the value 
+given for the --prefix argument, e.g.
+
+    setenv ASPELL_HOME $HOME/local
+
+and then you can use
+
+       R CMD INSTALL Aspell
+
+as usual.
+
+
+
+There may be occasions when you have install aspell.h in
+one location and libaspell.so in a very different part of the 
+file system.  In this case, specifying the locations
+is not as simple as giving one directory and allowing the configuration
+script to look in include/ and lib/.  Instead, you need to specify
+the two directories explicitly.  Use the environment variables
+ASPELL_INC_DIR and ASPELL_LIB_DIR for this, as in 
+
+   setenv ASPELL_INC_DIR $HOME/local/include
+
+   setenv ASPELL_LIB_DIR $HOME/local/lib
+
+(Use the different syntax 
+
+     export ASPELL_INC_DIR=$HOME/local/include 
+
+if you use sh or Bash.)
+
+The configuration script adds the -I and -L as appropriate.
+If you need to do more, edit the Makevars.in file directly
+and bypass the configuration setup.
+
+
+Then
+    R CMD INSTALL Aspell 
+
+should work fine.
+
+Please mail me if the configuration does not work or if you have
+improvements to it.
+
+ Duncan Temple Lang
+
+duncan@wald.ucdavis.edu
+

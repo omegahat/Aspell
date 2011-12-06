@@ -1,0 +1,92 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html> <head>
+<title>Aspell package for R</title>
+</head>
+
+<body>
+<h1>Aspell package for R</h1>
+<p align="right"><a href="@SRC_TAR@">Source  (@VERSION@)</a></p>
+
+This R package provides an interface to the aspell library for
+checking the spelling of words and documents.  The library is part of
+the GNU software and provides a flexible framework for spelling with
+customized dictionaries, filters, and so on.
+
+<br>
+Documentation on aspell can be found at
+<a
+href="http://aspell.sourceforge.net">http://aspell.sourceforge.net</a>.
+The source code, binaries and dictionaries for aspell are also available from there.
+
+<P>
+
+This package provides access to these library facilities from within
+R.  One can check the spelling of words, obtain suggetsions for
+corrections, check an entire document sequentially customize the
+speller, maintain different spellers for different purposes, and add
+new words and provide corrections for the speller to use in the
+future.
+
+<h2>The Code</h2>
+
+To use this package, one needs to have the aspell library installed.
+Also, one needs to have one or more suitable dictionaries.
+
+
+The R package is available as source as
+<a href="@SRC_TAR@">Aspell</a>.
+This can be installed as
+
+<pre>
+ R CMD INSTALL Aspell_0.1-0.tar.gz
+</pre>
+
+or directly from within R as
+<pre>
+install.packages("Aspell", repos = "http://www.omegahat.org/R")
+</pre>
+
+
+<h2>Dictionaries</h2>
+Before you can actually use the <i class="rfunc">>aspell</i> function,
+you do need to ensure that there is an appropriate dictionary
+installed.  See 
+<a href="ftp://ftp.gnu.org/gnu/aspell/dict/0index.html">ftp://ftp.gnu.org/gnu/aspell/dict/0index.html</a>.
+If you see an error message of the form
+<pre>
+</pre>
+
+<p/>
+There is currently no binary version for Windows.
+Send mail to me if you would like one.
+
+<h2>Other Information</h2>
+
+<dl>
+
+  <dt>
+  <li> <a href="aspell.html">User's guide</a>
+  <dd>
+
+  <dt>
+  <li> <a href="INSTALL">INSTALL</a> notes.
+  <dd>
+
+  <dt>
+  <li> <a href="FAQ.html">FAQ</a>.
+  <dd>
+
+  <dt>
+  <li> <a href="Changes.html">Change log for the package</a>.
+  <dd>
+</dl>
+
+
+
+<hr>
+<address><a href="http://www.stat.ucdavis.edu/~duncan">Duncan Temple Lang</a>
+<a href=mailto:duncan@wald.ucdavis.edu>&lt;duncan@wald.ucdavis.edu&gt;</a></address>
+<!-- hhmts start -->
+Last modified: Wed Jul 20 11:41:15 PDT 2011
+<!-- hhmts end -->
+</body> </html>

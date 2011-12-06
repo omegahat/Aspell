@@ -1,0 +1,24 @@
+Package: Aspell
+Version: 0.2-0
+Title: Interface to aspell library
+Description: An interface for R to facilities in the aspell library
+  to provide a mechanism by which we can check spelling of different
+  text such as help files, XML documentation, text analysis of documents, 
+  finding help words, GUI facilities in R, etc.  
+  We can also explore different approaches to predicting correct spelling.
+Note:  It is not clear that  we need this in R as we delegate the spell
+   checking to other tools such as Emacs, Word Processors, etc.
+   However, there are numerous errors in the Rd files in packages
+   and it may make it easier to check them if the tools are available in R.
+   We want to do quality control tests during R CMD check.
+   Also, this is an interesting library  to explore in terms of constructing
+   an interface to it from S in an automated manner.
+   Google's spell checking facilities are also very convenient.
+License: GPL
+Depends: methods
+SystemRequirements: aspell (>= 0.60, probably)
+Maintainer: Duncan Temple Lang <duncan@wald.ucdavis.edu>
+Author: Duncan Temple Lang <duncan@wald.ucdavis.edu>
+URL:  http://www.omegahat.org/Aspell, http://aspell.sourceforge.net
+
+
