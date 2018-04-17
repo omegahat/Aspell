@@ -245,6 +245,12 @@ setMethod("aspell", "ANY",
           function(words, suggests = FALSE,  speller = getSpeller())
           {
 
+             if(length(words) == 0) {
+                 if(suggests)
+                     return(list())
+                 else
+                     return(logical())
+             }
              vals = lapply(as.character(words), function(w) .Call("Raspell_spell", speller@ref, w, as.logical(suggests), PACKAGE = "Aspell"))
 
              if(!suggests)
