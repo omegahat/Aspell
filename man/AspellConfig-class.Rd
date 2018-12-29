@@ -60,8 +60,10 @@
   }
 }
 \section{Methods}{
+  \describe{
   \item{\$}{these operators provide syntactic convenience for using the
     configuration and speller objects.}
+  }
 }
 
 \references{\url{http://aspell.sourceforge.net}}
