@@ -1,6 +1,24 @@
 #include "aspell.h"
 #include "Rdefines.h"
 
+
+#ifndef PROBLEM
+
+#define R_PROBLEM_BUFSIZE	4096
+/* Parentheses added for FC4 with gcc4 and -D_FORTIFY_SOURCE=2 */
+#define PROBLEM			{char R_problem_buf[R_PROBLEM_BUFSIZE];(snprintf)(R_problem_buf, R_PROBLEM_BUFSIZE,
+#define MESSAGE                 {char R_problem_buf[R_PROBLEM_BUFSIZE];(snprintf)(R_problem_buf, R_PROBLEM_BUFSIZE,
+#define ERROR			),Rf_error(R_problem_buf);}
+#define RECOVER(x)		),Rf_error(R_problem_buf);}
+#define WARNING(x)		),Rf_warning(R_problem_buf);}
+#define LOCAL_EVALUATOR		/**/
+#define NULL_ENTRY		/**/
+#define WARN			WARNING(NULL)
+
+#endif
+
+
+
 static SEXP R_makeSpellReference(void *ptr, const char *tag, R_CFinalizer_t fin);
 static void *R_getSpellReference(SEXP el, const char *tag);
 static SEXP Raspell_createDictInfo(const AspellDictInfo *info, SEXP fn);
